@@ -15,5 +15,17 @@ Antes de comenzar, asegúrate de tener instalado:
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone [https://github.com/TU_USUARIO/TU_REPOSITORIO.git](https://github.com/TU_USUARIO/TU_REPOSITORIO.git)
+   git clone https://github.com/Antonio-SeGa/troll-web-project.git
    cd TU_REPOSITORIO
+
+2. **Instalar dependencias:**
+Este paso es vital para que la función `logger.js` funcione.
+   ```bash
+   npm install
+
+3. **Variables de Entorno (.env):**
+   ```bash
+   npm install
+
+
+
