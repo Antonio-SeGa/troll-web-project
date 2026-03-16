@@ -1,17 +1,19 @@
-# 🦍 Proyecto Troll Web
+# 🦍 Proyecto Troll Web (Gorila Tracker)
 
-Sistema de rastreo inteligente con reporte a Telegram.
+Este es un sistema de ingeniería social con fines educativos que permite capturar información técnica y ubicación (GPS/IP) de un dispositivo, enviando los reportes en tiempo real a un bot de Telegram.
 
-## 🚀 Características
-- Bloqueo de contenido hasta interacción del usuario.
-- Detección de 3 escenarios: GPS exacto, GPS apagado o Permiso denegado.
+## 📋 Requisitos Previos
 
-## 🛠️ Configuración
-Este proyecto requiere las siguientes variables de entorno en Netlify:
-- `TELEGRAM_TOKEN`: El token de tu bot.
-- `TELEGRAM_CHAT_ID`: Tu ID de chat.
+Antes de comenzar, asegúrate de tener instalado:
+* **Node.js** (v18 o superior).
+* **Git** configurado en tu equipo.
+* **Netlify CLI** (si prefieres desplegar por terminal): `npm install -g netlify-cli`.
 
-## 📦 Instalación
-1. Clonar el repo.
-2. Ejecutar `npm install`.
-3. Desplegar con Netlify CLI.
+---
+
+## 🛠️ Paso 1: Configuración Local
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone [https://github.com/TU_USUARIO/TU_REPOSITORIO.git](https://github.com/TU_USUARIO/TU_REPOSITORIO.git)
+   cd TU_REPOSITORIO
