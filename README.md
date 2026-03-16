@@ -66,8 +66,3 @@ Sin este paso, no recibirás mensajes. Debes cargar tus credenciales en el panel
 
 ## ⚠️ Advertencia
 Este proyecto es exclusivamente para uso académico y pruebas de penetración autorizadas. El uso de estas herramientas para actividades maliciosas es responsabilidad total del usuario.
-
-### ¿Cómo crear el archivo `.env` correctamente?
-Como mencionas que el proyecto debe funcionar bien al clonarlo, recuerda esto:
-* **En local:** El archivo `.env` sirve para que el código reconozca las llaves mientras programas.
-* **En GitHub:** El archivo `.env` **NUNCA** se sube. El archivo `.gitignore` que creamos anteriormente se encargará de que GitHub lo ignore por seguridad.
